@@ -1,8 +1,11 @@
 from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
 import webbrowser
 import csv
 
+
+class MyGlobals():pass
 
 def internet():
     webbrowser.open_new("http://www.jeuxvideo.com/forums/1-51-44890961-1-0-1-0-j-ai-chie-dans-un-saladier-a-auchan.htm")
@@ -15,6 +18,8 @@ def sauvegarde():
     ma_liste_de_medoc.append(md2)
     print(ma_liste_de_medoc)
     print(ma_liste_de_medoc[0],ma_liste_de_medoc[1])
+    a2 = MyGlobals.deroulant.get()
+    print(a2)
     return ma_liste_de_medoc
 
 def cases():
@@ -24,20 +29,22 @@ def ouverture_fichier_de_base():
     window.fileName = filedialog.askopenfilename(filetype =(("PDF file","*.pdf"),("HTML files","*.html"),("CSV files","*.csv")))
     with open(window.fileName, newline = '') as csvfile :
         readerMan = csv.reader(csvfile, delimiter=';',quotechar='|')
-        myCSV = []
+        MyGlobals.myCSV = []
         for row in readerMan :
-            if test_de_presence(myCSV,row[-1]) == 1  or len(myCSV) ==0 :
-                myCSV.append(row[-1])
-    print(myCSV[0])
-    print(myCSV[1])
+            if test_de_presence(MyGlobals.myCSV,row[-1]) == 1  or len(MyGlobals.myCSV) ==0 :
+                MyGlobals.myCSV.append(row[-1])
+    print(MyGlobals.myCSV[0])
+    print(MyGlobals.myCSV[1])
     print(window.fileName)
-    for i in myCSV :
+    for i in MyGlobals.myCSV :
         print(i)
-    print("la taille = ",len(myCSV))
+    print("la taille = ",len(MyGlobals.myCSV))
     a = 'PREPARATIONS THYROIDIENNES'
-    if(a == myCSV[1]) :
+    if(a == MyGlobals.myCSV[1]) :
         print('ok')
-    return(window.fileName)
+    MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",30))
+    MyGlobals.deroulant.pack(expand = YES)
+    return([window.fileName,MyGlobals.myCSV])
 
 def test_de_presence(maListe,monSujet):
     x = 1
@@ -54,7 +61,7 @@ def ouvrir_carte():
 
 # On créé notre fenêtre
 window = Tk()
-window.title("On va gérer lol")
+window.title("Becquet Analisys")
 window.geometry("1280x720")
 window.minsize(480, 360)
 window.config(background='#DD1616')
@@ -109,6 +116,8 @@ bouton_de_sauvegarde.pack(pady=25, fill=X)
 
 case_a_cocher = Checkbutton(fr,text="Inclure ceci ?",font=("Arial", 15), bg='white', fg='#DD1616',command=cases)
 case_a_cocher.pack()
+
+
 
 # Puis on l'affiche
 window.config(menu = menus)
