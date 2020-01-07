@@ -3,6 +3,9 @@ from tkinter import filedialog
 from tkinter import ttk
 import webbrowser
 import csv
+import folium
+from folium import plugins
+
 
 
 class MyGlobals():pass
@@ -27,25 +30,42 @@ def sauvegarde():
     print(ma_liste_de_medoc)
     print(ma_liste_de_medoc[0],ma_liste_de_medoc[1])
     a2 = MyGlobals.deroulant.get()
+    filename=formatToFileName(a2)
     print(a2)
+    chem = "Cartes/"+filename
+    print(chem)
+    carto(a2,MyGlobals.chemin,chem)
     return ma_liste_de_medoc
+
+def formatToFileName(string):
+    string=string.replace("/","")
+    string=string.replace("\\","")
+    string=string.replace(":","")
+    string=string.replace("*","")
+    string=string.replace("?","")
+    string=string.replace("\"","")
+    string=string.replace("<","")
+    string=string.replace(">","")
+    string=string.replace("|","")
+    return string
 
 def cases():
     case_a_cocher.flash()
 
 def ouverture_fichier_de_base():
     window.fileName = filedialog.askopenfilename(filetype =(("CSV files","*.csv"),("PDF file","*.pdf"),("HTML files","*.html")))
+    MyGlobals.chemin = window.fileName
     MyGlobals.myCSV = []
     if window.fileName!='':
         with open(window.fileName, newline = '') as csvfile :
-            header=next(csvfile) #saute lapremière ligne (header)
-            if header!='nom_voie;nom_commune;lon;lat;nom;EAN13;Date_order;L_ATC3\r\n':
+            readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
+            header=readerMan.fieldnames
+            if header != MyGlobals.fileHeader:
                 popupmsg('Le fichier selectionné est incorrect ou corrumpu')
                 return
-            readerMan = csv.reader(csvfile, delimiter=';',quotechar='|')        
             for row in readerMan :
-                if test_de_presence(MyGlobals.myCSV,row[-1]) == 1  or len(MyGlobals.myCSV) ==0 :
-                    MyGlobals.myCSV.append(row[-1])
+                if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
+                    MyGlobals.myCSV.append(row["L_ATC3"])
         print(MyGlobals.myCSV[0])
         print(MyGlobals.myCSV[1])
         print(window.fileName)
@@ -54,10 +74,11 @@ def ouverture_fichier_de_base():
             print(i)
         print("la taille = ",len(MyGlobals.myCSV))
         a = 'PREPARATIONS THYROIDIENNES'
+        MyGlobals.deroulant['values']=MyGlobals.myCSV
+        MyGlobals.deroulant['state'] = 'readonly'
+        bouton_de_sauvegarde['state'] = 'normal'
         if(a == MyGlobals.myCSV[1]) :
             print('ok')
-        MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",30))
-        MyGlobals.deroulant.pack(expand = YES)
     return([window.fileName,MyGlobals.myCSV])
 
 def test_de_presence(maListe,monSujet):
@@ -72,6 +93,29 @@ def ouvrir_carte():
     window.fileName = filedialog.askopenfilename(filetype =(("HTML files","*.html"),))
     webbrowser.open_new(window.fileName)
     return(window.fileName)
+
+def get_EAN13(name_atc,path_file):
+    with open(path_file,newline='') as csvfile:
+        reader = csv.DictReader(csvfile,delimiter=';',quotechar='|')
+        list =[]
+        for row in reader:
+            if(name_atc == row["L_ATC3"]):
+                l = [row["lat"],row["lon"]]
+                list.append(l)
+        return list
+
+def carto(name_atc,path_data_file,path_html_file):
+    list = []
+    list = get_EAN13(name_atc,path_data_file)
+    m = folium.Map([50.4218,2.7876], zoom_start=14)
+
+
+    m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
+    if ".html" in path_html_file:
+        m.save(path_html_file)
+    else:
+        m.save(path_html_file+".html")
+    print("c'est fini")
 
 # On créé notre fenêtre
 window = Tk()
@@ -127,12 +171,17 @@ bou = Button(fr, text="Aller voir le saladier du Auchan", font=("Arial", 30), bg
 bou.pack(pady=25, fill=X)
 
 bouton_de_sauvegarde = Button(fr, text="Sauvegarder ma saisie", font=("Arial", 30), bg='white', fg='#DD1616', command = sauvegarde)
+bouton_de_sauvegarde['state'] = 'disabled'
 bouton_de_sauvegarde.pack(pady=25, fill=X)
 
 case_a_cocher = Checkbutton(fr,text="Inclure ceci ?",font=("Arial", 15), bg='white', fg='#DD1616',command=cases)
 case_a_cocher.pack()
 
-
+MyGlobals.fileHeader=['genre','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
+MyGlobals.myCSV = []
+MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
+MyGlobals.deroulant['state']='disabled'
+MyGlobals.deroulant.pack(expand = YES)
 
 # Puis on l'affiche
 window.config(menu = menus)
