@@ -5,6 +5,7 @@ import webbrowser
 import csv
 import folium
 from folium import plugins
+import os
 
 
 
@@ -17,6 +18,7 @@ def popupmsg(msg):
     B1 = Button(popup, text="OK", command = popup.destroy)
     B1.pack()
     popup.mainloop()
+    return
 
 def internet():
     webbrowser.open_new("http://www.jeuxvideo.com/forums/1-51-44890961-1-0-1-0-j-ai-chie-dans-un-saladier-a-auchan.htm")
@@ -61,7 +63,11 @@ def ouverture_fichier_de_base():
             readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
             header=readerMan.fieldnames
             if header != MyGlobals.fileHeader:
-                popupmsg('Le fichier selectionné est incorrect ou corrumpu')
+                MyGlobals.deroulant.set('')
+                MyGlobals.deroulant['values'] = []
+                MyGlobals.deroulant['state'] = 'disabled'
+                bouton_de_sauvegarde['state'] = 'disabled'
+                popupmsg('Le fichier selectionné est incorrect ou corrumpu')               
                 return
             for row in readerMan :
                 if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
@@ -79,6 +85,11 @@ def ouverture_fichier_de_base():
         bouton_de_sauvegarde['state'] = 'normal'
         if(a == MyGlobals.myCSV[1]) :
             print('ok')
+    else:
+        MyGlobals.deroulant.set('')
+        MyGlobals.deroulant['values'] = []
+        MyGlobals.deroulant['state'] = 'disabled'
+        bouton_de_sauvegarde['state'] = 'disabled'
     return([window.fileName,MyGlobals.myCSV])
 
 def test_de_presence(maListe,monSujet):
@@ -111,10 +122,13 @@ def carto(name_atc,path_data_file,path_html_file):
 
 
     m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
-    if ".html" in path_html_file:
-        m.save(path_html_file)
-    else:
-        m.save(path_html_file+".html")
+    if not ".html" in path_html_file:
+        path_html_file+=".html"
+
+    m.save(path_html_file)
+    if valeur_case.get()==1:
+        print(os.path.abspath(path_html_file))
+        webbrowser.open_new_tab(os.path.abspath(path_html_file))
     print("c'est fini")
 
 # On créé notre fenêtre
@@ -174,8 +188,10 @@ bouton_de_sauvegarde = Button(fr, text="Sauvegarder ma saisie", font=("Arial", 3
 bouton_de_sauvegarde['state'] = 'disabled'
 bouton_de_sauvegarde.pack(pady=25, fill=X)
 
-case_a_cocher = Checkbutton(fr,text="Inclure ceci ?",font=("Arial", 15), bg='white', fg='#DD1616',command=cases)
+valeur_case = BooleanVar()
+case_a_cocher = Checkbutton(fr,text="Ouvrir la carte après exécution",font=("Arial", 15), bg='white', fg='#DD1616',command=cases, variable=valeur_case)
 case_a_cocher.pack()
+
 
 MyGlobals.fileHeader=['genre','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
 MyGlobals.myCSV = []
