@@ -63,6 +63,7 @@ def ouvrir_carte():
 window = Tk()
 window.title("Becquet Analisys")
 window.geometry("1280x720")
+window.iconbitmap("logo-pharmacie-médical.ico")
 window.minsize(480, 360)
 window.config(background='#DD1616')
 
