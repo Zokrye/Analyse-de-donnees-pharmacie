@@ -54,10 +54,11 @@ def ouverture_fichier_de_base():
             print(i)
         print("la taille = ",len(MyGlobals.myCSV))
         a = 'PREPARATIONS THYROIDIENNES'
+        MyGlobals.deroulant['values']=MyGlobals.myCSV
+        MyGlobals.deroulant['state'] = 'readonly'
+        bouton_de_sauvegarde['state'] = 'normal'
         if(a == MyGlobals.myCSV[1]) :
             print('ok')
-        MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",30))
-        MyGlobals.deroulant.pack(expand = YES)
     return([window.fileName,MyGlobals.myCSV])
 
 def test_de_presence(maListe,monSujet):
@@ -127,12 +128,16 @@ bou = Button(fr, text="Aller voir le saladier du Auchan", font=("Arial", 30), bg
 bou.pack(pady=25, fill=X)
 
 bouton_de_sauvegarde = Button(fr, text="Sauvegarder ma saisie", font=("Arial", 30), bg='white', fg='#DD1616', command = sauvegarde)
+bouton_de_sauvegarde['state'] = 'disabled'
 bouton_de_sauvegarde.pack(pady=25, fill=X)
 
 case_a_cocher = Checkbutton(fr,text="Inclure ceci ?",font=("Arial", 15), bg='white', fg='#DD1616',command=cases)
 case_a_cocher.pack()
 
-
+MyGlobals.myCSV = []
+MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
+MyGlobals.deroulant['state']='disabled'
+MyGlobals.deroulant.pack(expand = YES)
 
 # Puis on l'affiche
 window.config(menu = menus)
