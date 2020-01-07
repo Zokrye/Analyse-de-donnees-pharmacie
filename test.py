@@ -6,6 +6,14 @@ import csv
 
 
 class MyGlobals():pass
+def popupmsg(msg):
+    popup = Toplevel()
+    popup.title("Attention")
+    label = Label(popup, text=msg) #Can add a font arg here
+    label.pack(side="top", fill="x", pady=10)
+    B1 = Button(popup, text="OK", command = popup.destroy)
+    B1.pack()
+    popup.mainloop()
 
 def internet():
     webbrowser.open_new("http://www.jeuxvideo.com/forums/1-51-44890961-1-0-1-0-j-ai-chie-dans-un-saladier-a-auchan.htm")
@@ -26,24 +34,30 @@ def cases():
     case_a_cocher.flash()
 
 def ouverture_fichier_de_base():
-    window.fileName = filedialog.askopenfilename(filetype =(("PDF file","*.pdf"),("HTML files","*.html"),("CSV files","*.csv")))
-    with open(window.fileName, newline = '') as csvfile :
-        readerMan = csv.reader(csvfile, delimiter=';',quotechar='|')
-        MyGlobals.myCSV = []
-        for row in readerMan :
-            if test_de_presence(MyGlobals.myCSV,row[-1]) == 1  or len(MyGlobals.myCSV) ==0 :
-                MyGlobals.myCSV.append(row[-1])
-    print(MyGlobals.myCSV[0])
-    print(MyGlobals.myCSV[1])
-    print(window.fileName)
-    for i in MyGlobals.myCSV :
-        print(i)
-    print("la taille = ",len(MyGlobals.myCSV))
-    a = 'PREPARATIONS THYROIDIENNES'
-    if(a == MyGlobals.myCSV[1]) :
-        print('ok')
-    MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",30))
-    MyGlobals.deroulant.pack(expand = YES)
+    window.fileName = filedialog.askopenfilename(filetype =(("CSV files","*.csv"),("PDF file","*.pdf"),("HTML files","*.html")))
+    MyGlobals.myCSV = []
+    if window.fileName!='':
+        with open(window.fileName, newline = '') as csvfile :
+            header=next(csvfile) #saute lapremière ligne (header)
+            if header!='nom_voie;nom_commune;lon;lat;nom;EAN13;Date_order;L_ATC3\r\n':
+                popupmsg('Le fichier selectionné est incorrect ou corrumpu')
+                return
+            readerMan = csv.reader(csvfile, delimiter=';',quotechar='|')        
+            for row in readerMan :
+                if test_de_presence(MyGlobals.myCSV,row[-1]) == 1  or len(MyGlobals.myCSV) ==0 :
+                    MyGlobals.myCSV.append(row[-1])
+        print(MyGlobals.myCSV[0])
+        print(MyGlobals.myCSV[1])
+        print(window.fileName)
+        MyGlobals.myCSV.sort()
+        for i in MyGlobals.myCSV :
+            print(i)
+        print("la taille = ",len(MyGlobals.myCSV))
+        a = 'PREPARATIONS THYROIDIENNES'
+        if(a == MyGlobals.myCSV[1]) :
+            print('ok')
+        MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",30))
+        MyGlobals.deroulant.pack(expand = YES)
     return([window.fileName,MyGlobals.myCSV])
 
 def test_de_presence(maListe,monSujet):
