@@ -6,9 +6,14 @@ import csv
 import folium
 from folium import plugins
 import os
+import matplotlib.pyplot as plt
+from PIL import ImageTk
 
 
 class MyGlobals():pass
+
+MyGlobals.fileHeader=['Ben_Unique_TI','Cli_sexe','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
+MyGlobals.myCSV = []
 
 def popupmsg(msg):
     popup = Toplevel()
@@ -18,7 +23,7 @@ def popupmsg(msg):
     label.pack(side="top", fill="x", pady=10)
     B1 = Button(popup, text="OK", command = popup.destroy)
     B1.pack()
-    popup.mainloop()
+    #popup.wait_window()
     return
 
 def internet():
@@ -39,7 +44,9 @@ def sauvegarde():
     if not os.path.exists(os.path.abspath("Cartes/")):
         os.makedirs(os.path.abspath("Cartes/"))
     print(chem)
+    graph_sexe(a2,MyGlobals.chemin)
     carto(a2,MyGlobals.chemin,chem)
+    plt.show()
     return ma_liste_de_medoc
 
 def formatToFileName(string):
@@ -55,7 +62,8 @@ def formatToFileName(string):
     return string
 
 def cases():
-    case_a_cocher.flash()
+    print("coché")
+    #case_a_cocher.flash()
 
 def ouverture_fichier_de_base():
     window.fileName = filedialog.askopenfilename(filetype =(("CSV files","*.csv"),("PDF file","*.pdf"),("HTML files","*.html")))
@@ -145,6 +153,30 @@ def get_EAN13(name_atc,path_file):
                 list.append(l)
         return list
 
+def graph_sexe(name_atc,path_data_file):
+    nb_individuals=[0,0,0] # indexes: 0=man, 1=woman, 2=other
+    list_ids=[]
+    with open(path_data_file,newline='') as csvfile:
+        reader = csv.DictReader(csvfile,delimiter=';',quotechar='|')
+        for row in reader:
+            if row["Ben_TI"]=='0' and row["Cli_TI"] not in list_ids and row["L_ATC3"]==name_atc:
+                nb_individuals[int(row["Cli_sexe"])]+=1
+                list_ids.append(row["Cli_TI"])
+        men_proportion=100*nb_individuals[0]/(nb_individuals[0]+nb_individuals[1])
+        women_proportion=100*nb_individuals[1]/(nb_individuals[0]+nb_individuals[1])
+        labels = 'Homme','Femme'
+        sizes = [men_proportion,women_proportion]
+        colors = ['blue','red']
+        plt.close()
+        plt.pie(sizes, labels=labels, colors=colors, 
+                autopct='%1.1f%%', shadow=True, startangle=90)
+        plt.axis('equal')
+        if not os.path.exists(os.path.abspath("Diagrammes\Sexes")): 
+            os.makedirs(os.path.abspath("Diagrammes\Sexes"))
+        plt.savefig(os.path.abspath('Diagrammes\Sexes\\'+name_atc+'.png'))
+        plt.show(block=False)
+    return  
+
 def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
@@ -161,13 +193,25 @@ def carto(name_atc,path_data_file,path_html_file):
         webbrowser.open_new_tab(os.path.abspath(path_html_file))
     print("c'est fini")
 
+
+
 # On créé notre fenêtre
 window = Tk()
 window.title("Becquet Analisys")
 window.geometry("1280x720")
 window.iconbitmap("logo-pharmacie-médical.ico")
 window.minsize(480, 360)
-window.config(background='#DD1616')
+#window.config(background='#DD1616')
+
+canvas = Canvas(window,width = 1920, height = 1920, bg = 'blue')
+canvas.pack(expand = YES, fill = BOTH)
+
+image = ImageTk.PhotoImage(file = "D:\\Users\\Alexandre\\Desktop\\pharmacie_project\\Analyse de donnees pharmacie\\background.jpg")
+canvas.create_image(0, 0, image = image, anchor = NW)
+
+
+
+
 
 
 
@@ -188,46 +232,46 @@ menuFichier.add_command(label = "Quitter",command = quit)
 menuEdition.add_command(label = "Ouvrir",command = ouvrir_carte)
 
 # On ajoute une frame
-fr = Frame(window, bg='#DD1616', bd='2', relief=SOLID)
-fr2 = Frame(fr, bg='#DD1616',bd='2',relief=SOLID)
-fr3 = Frame(fr, bg='#DD1616',bd='2',relief=SOLID)
-
+fr = Frame(canvas,bg='', bd='2', relief=SOLID)
+fr.place(x=10,y=10)
+fr2 = Frame(canvas,bg='', bd='2', relief=SOLID)
 # on met qqs éléments
-lab_titre = Label(fr, text="Un Deux Un Deux", font=("Arial", 50), bg='#DD1616', fg='white')
-lab_titre.pack(expand=YES)
+#lab_titre = Label(fr, text="Un Deux Un Deux", font=("Arial", 50), bg='#DD1616', fg='white')
+#lab_titre.pack(expand=YES)
+#
+#lab_titre2 = Label(fr, text="Bienvenue à tous", font=("Arial", 30), bg='#DD1616', fg='white')
+#lab_titre2.pack(expand=YES)
 
-lab_titre2 = Label(fr, text="Bienvenue à tous", font=("Arial", 30), bg='#DD1616', fg='white')
-lab_titre2.pack(expand=YES)
 
-medoc_name = Entry(fr2, font=("Arial", 50), bg='#DD1616', fg='white')
-medoc_name.pack(expand=YES)
-
-medoc2_name = Entry(fr2,  font=("Arial", 50), bg='#DD1616', fg='white')
-medoc2_name.pack(expand=YES)
-
-fr.pack(expand=YES)
-fr2.pack(expand=YES)
+fr.grid(row=0,column=0,sticky=W,padx=20, pady=20)
+fr2.grid(row=0,column=1,sticky=W,padx=60)
 #fr.grid(row=0, column=0)
-#fr2.grid(row=0, column=1)
+MyGlobals.deroulant = ttk.Combobox(fr, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
+MyGlobals.deroulant['state']='disabled'
+MyGlobals.deroulant.pack(expand = YES)
 
-# Boutons et autres
-bou = Button(fr, text="Aller voir le saladier du Auchan", font=("Arial", 30), bg='white', fg='#DD1616', command = internet)
-bou.pack(pady=25, fill=X)
+valeur_case = BooleanVar()
+valeur_case1 = BooleanVar()
+valeur_case2 = BooleanVar()
+valeur_case3 = BooleanVar()
+case_a_cocher = Checkbutton(fr2,text="Ouvrir la carte après exécution", font=("Arial", 15),bg='#BBE9E7', fg='#000000', variable=valeur_case)
+case_a_cocher.pack()
+case_a_cocher1 = Checkbutton(fr2,text="Ouvrir la carte après exécution",font=("Arial", 15), fg='#000000', variable=valeur_case1)
+case_a_cocher1.pack()
+case_a_cocher2 = Checkbutton(fr2,text="Ouvrir la carte après exécution",font=("Arial", 15), fg='#000000', variable=valeur_case2)
+case_a_cocher2.pack()
+case_a_cocher3 = Checkbutton(fr2,text="Ouvrir la carte après exécution",font=("Arial", 15), fg='#000000', variable=valeur_case3)
+case_a_cocher3.pack()
 
-bouton_de_sauvegarde = Button(fr, text="Sauvegarder ma saisie", font=("Arial", 30), bg='white', fg='#DD1616', command = sauvegarde)
+bouton_de_sauvegarde = Button(fr, text="Lancer l'analyse", font=("Arial", 30), bg='white', fg='#000000', command = sauvegarde)
 bouton_de_sauvegarde['state'] = 'disabled'
 bouton_de_sauvegarde.pack(pady=25, fill=X)
 
-valeur_case = BooleanVar()
-case_a_cocher = Checkbutton(fr,text="Ouvrir la carte après exécution",font=("Arial", 15), bg='white', fg='#DD1616',command=cases, variable=valeur_case)
-case_a_cocher.pack()
 
 
-MyGlobals.fileHeader=['genre','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
-MyGlobals.myCSV = []
-MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
-MyGlobals.deroulant['state']='disabled'
-MyGlobals.deroulant.pack(expand = YES)
+
+
+
 
 # Puis on l'affiche
 window.config(menu = menus)
