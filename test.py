@@ -36,7 +36,9 @@ def sauvegarde():
     a2 = MyGlobals.deroulant.get()
     filename=formatToFileName(a2)
     print(a2)
-    chem = "Cartes/"+filename
+    chem =os.path.abspath("Cartes/"+filename)
+    if not os.path.exists(os.path.abspath("Cartes/")):
+        os.makedirs(os.path.abspath("Cartes/"))
     print(chem)
     carto(a2,MyGlobals.chemin,chem)
     return ma_liste_de_medoc
@@ -102,6 +104,9 @@ def test_de_presence(maListe,monSujet):
                 x = 0
     return x
 
+def showCity():
+    print(MyGlobals.choix_ville.get())
+
 def menuParametre():
     para = Toplevel()
     para.title("Paramètres")
@@ -109,24 +114,19 @@ def menuParametre():
     para.iconbitmap("logo-pharmacie-médical.ico")
     labelPara = Label(para) #Can add a font arg here
     labelPara.pack(side="top", fill="x", pady=10)
-    MyGlobals.varLille = 0
-    MyGlobals.varLievin = 1
-    MyGlobals.lille = Checkbutton(para,text="Lille",font=("Arial", 15), bg='white', fg='#DD1616',command = choix_lieu, variable = MyGlobals.varLille)
-    MyGlobals.lievin = Checkbutton(para,text="Liévin",font=("Arial", 15), bg='white', fg='#DD1616',command = choix_lieu2, variable = MyGlobals.varLievin)
+    MyGlobals.liste_villes = [("Liévin",1),("Lille",2)]
+    MyGlobals.choix_ville = IntVar()
+    MyGlobals.choix_ville.set(1)
+    for val,ville in enumerate(MyGlobals.liste_villes):
+        print("la val : ",val)
+        Radiobutton(para,text = ville[0],padx = 20,command = choix_lieu(ville[1]), variable = MyGlobals.choix_ville,value = val).pack()
     B1 = Button(para, text="OK", command = para.destroy)
-    MyGlobals.lille.pack()
-    MyGlobals.lievin.pack()
     B1.pack()
     para.mainloop()
-    return
 
-def choix_lieu():
-    if MyGlobals.lievin.value == 1 :
-        MyGlobals.lievin.toggle()
+def choix_lieu(choix):
+    print("vous avez choisi la ville ",MyGlobals.liste_villes[choix-1][0])
 
-def choix_lieu2():
-    if MyGlobals.lille.value == 1 :
-        MyGlobals.lille.toggle()
 
 def ouvrir_carte():
     window.fileName = filedialog.askopenfilename(filetype =(("HTML files","*.html"),))
