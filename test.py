@@ -3,11 +3,16 @@ from tkinter import filedialog
 from tkinter import ttk
 import webbrowser
 import csv
+import folium
+from folium import plugins
+
 
 
 class MyGlobals():pass
+
 def popupmsg(msg):
     popup = Toplevel()
+    popup.iconbitmap("logo-pharmacie-médical.ico")
     popup.title("Attention")
     label = Label(popup, text=msg) #Can add a font arg here
     label.pack(side="top", fill="x", pady=10)
@@ -27,14 +32,31 @@ def sauvegarde():
     print(ma_liste_de_medoc)
     print(ma_liste_de_medoc[0],ma_liste_de_medoc[1])
     a2 = MyGlobals.deroulant.get()
+    filename=formatToFileName(a2)
     print(a2)
+    chem = "C:/Users/burak/PycharmProjects/ph3001/"+filename
+    print(chem)
+    carto(a2,MyGlobals.chemin,chem)
     return ma_liste_de_medoc
+
+def formatToFileName(string):
+    string=string.replace("/","")
+    string=string.replace("\\","")
+    string=string.replace(":","")
+    string=string.replace("*","")
+    string=string.replace("?","")
+    string=string.replace("\"","")
+    string=string.replace("<","")
+    string=string.replace(">","")
+    string=string.replace("|","")
+    return string
 
 def cases():
     case_a_cocher.flash()
 
 def ouverture_fichier_de_base():
     window.fileName = filedialog.askopenfilename(filetype =(("CSV files","*.csv"),("PDF file","*.pdf"),("HTML files","*.html")))
+    MyGlobals.chemin = window.fileName
     MyGlobals.myCSV = []
     if window.fileName!='':
         with open(window.fileName, newline = '') as csvfile :
@@ -42,10 +64,10 @@ def ouverture_fichier_de_base():
             if header!='nom_voie;nom_commune;lon;lat;nom;EAN13;Date_order;L_ATC3\r\n':
                 popupmsg('Le fichier selectionné est incorrect ou corrumpu')
                 return
-            readerMan = csv.reader(csvfile, delimiter=';',quotechar='|')        
+            readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
             for row in readerMan :
-                if test_de_presence(MyGlobals.myCSV,row[-1]) == 1  or len(MyGlobals.myCSV) ==0 :
-                    MyGlobals.myCSV.append(row[-1])
+                if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
+                    MyGlobals.myCSV.append(row["L_ATC3"])
         print(MyGlobals.myCSV[0])
         print(MyGlobals.myCSV[1])
         print(window.fileName)
@@ -69,10 +91,59 @@ def test_de_presence(maListe,monSujet):
                 x = 0
     return x
 
+def menuParametre():
+    para = Toplevel()
+    para.title("Paramètres")
+    para.geometry("360x140")
+    para.iconbitmap("logo-pharmacie-médical.ico")
+    labelPara = Label(para) #Can add a font arg here
+    labelPara.pack(side="top", fill="x", pady=10)
+    MyGlobals.varLille = 0
+    MyGlobals.varLievin = 1
+    MyGlobals.lille = Checkbutton(para,text="Lille",font=("Arial", 15), bg='white', fg='#DD1616',command = choix_lieu, variable = MyGlobals.varLille)
+    MyGlobals.lievin = Checkbutton(para,text="Liévin",font=("Arial", 15), bg='white', fg='#DD1616',command = choix_lieu2, variable = MyGlobals.varLievin)
+    B1 = Button(para, text="OK", command = para.destroy)
+    MyGlobals.lille.pack()
+    MyGlobals.lievin.pack()
+    B1.pack()
+    para.mainloop()
+    return
+
+def choix_lieu():
+    if MyGlobals.lievin.value == 1 :
+        MyGlobals.lievin.toggle()
+
+def choix_lieu2():
+    if MyGlobals.lille.value == 1 :
+        MyGlobals.lille.toggle()
+
 def ouvrir_carte():
     window.fileName = filedialog.askopenfilename(filetype =(("HTML files","*.html"),))
     webbrowser.open_new(window.fileName)
     return(window.fileName)
+
+def get_EAN13(name_atc,path_file):
+    with open(path_file,newline='') as csvfile:
+        reader = csv.DictReader(csvfile,delimiter=';',quotechar='|')
+        list =[]
+        for row in reader:
+            if(name_atc == row["L_ATC3"]):
+                l = [row["lat"],row["lon"]]
+                list.append(l)
+        return list
+
+def carto(name_atc,path_data_file,path_html_file):
+    list = []
+    list = get_EAN13(name_atc,path_data_file)
+    m = folium.Map([50.4218,2.7876], zoom_start=14)
+
+
+    m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
+    if ".html" in path_html_file:
+        m.save(path_html_file)
+    else:
+        m.save(path_html_file+".html")
+    print("c'est fini")
 
 # On créé notre fenêtre
 window = Tk()
@@ -96,7 +167,7 @@ menus.add_cascade(label="Outils",menu=menuOutils)
 menus.add_cascade(label="Help",menu=menuHelp)
 menuFichier.add_command(label = "Nouveau")
 menuFichier.add_command(label = "Ouvrir",command = ouverture_fichier_de_base)
-menuFichier.add_command(label = "Enregistrer")
+menuFichier.add_command(label = "Paramètres",command = menuParametre)
 menuFichier.add_command(label = "Quitter",command = quit)
 menuEdition.add_command(label = "Ouvrir",command = ouvrir_carte)
 
