@@ -34,7 +34,7 @@ def sauvegarde():
     a2 = MyGlobals.deroulant.get()
     filename=formatToFileName(a2)
     print(a2)
-    chem = "C:/Users/burak/PycharmProjects/ph3001/"+filename
+    chem = "Cartes/"+filename
     print(chem)
     carto(a2,MyGlobals.chemin,chem)
     return ma_liste_de_medoc
@@ -60,11 +60,11 @@ def ouverture_fichier_de_base():
     MyGlobals.myCSV = []
     if window.fileName!='':
         with open(window.fileName, newline = '') as csvfile :
-            header=next(csvfile) #saute lapremière ligne (header)
-            if header!='nom_voie;nom_commune;lon;lat;nom;EAN13;Date_order;L_ATC3\r\n':
+            readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
+            header=readerMan.fieldnames
+            if header != MyGlobals.fileHeader:
                 popupmsg('Le fichier selectionné est incorrect ou corrumpu')
                 return
-            readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
             for row in readerMan :
                 if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
                     MyGlobals.myCSV.append(row["L_ATC3"])
@@ -205,6 +205,7 @@ bouton_de_sauvegarde.pack(pady=25, fill=X)
 case_a_cocher = Checkbutton(fr,text="Inclure ceci ?",font=("Arial", 15), bg='white', fg='#DD1616',command=cases)
 case_a_cocher.pack()
 
+MyGlobals.fileHeader=['genre','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
 MyGlobals.myCSV = []
 MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
 MyGlobals.deroulant['state']='disabled'
