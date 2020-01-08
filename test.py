@@ -8,7 +8,6 @@ from folium import plugins
 import os
 
 
-
 class MyGlobals():pass
 
 def popupmsg(msg):
@@ -114,18 +113,21 @@ def menuParametre():
     para.iconbitmap("logo-pharmacie-médical.ico")
     labelPara = Label(para) #Can add a font arg here
     labelPara.pack(side="top", fill="x", pady=10)
-    MyGlobals.liste_villes = [("Liévin",1),("Lille",2)]
+    MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[52.4218,3.7876])]
     MyGlobals.choix_ville = IntVar()
-    MyGlobals.choix_ville.set(1)
+    MyGlobals.choix_ville.set(0)
     for val,ville in enumerate(MyGlobals.liste_villes):
-        print("la val : ",val)
-        Radiobutton(para,text = ville[0],padx = 20,command = choix_lieu(ville[1]), variable = MyGlobals.choix_ville,value = val).pack()
+        if ville[0] == "Liévin" :
+            MyGlobals.choix_ville.set(1)
+        else :
+            MyGlobals.choix_ville.set(0)
+        Radiobutton(para,text = ville[0],padx = 20, variable = MyGlobals.choix_ville,value = val,command = choix_lieu).pack()
     B1 = Button(para, text="OK", command = para.destroy)
     B1.pack()
     para.mainloop()
 
-def choix_lieu(choix):
-    print("vous avez choisi la ville ",MyGlobals.liste_villes[choix-1][0])
+def choix_lieu():
+    print("Vous avez choisi ",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0]," avec comme coordonnées [",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],",",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1],"]")
 
 
 def ouvrir_carte():
