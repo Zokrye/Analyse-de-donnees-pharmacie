@@ -6,6 +6,7 @@ import csv
 import folium
 from folium import plugins
 import os
+import matplotlib.pyplot as plt
 
 
 
@@ -17,7 +18,7 @@ def popupmsg(msg):
     label.pack(side="top", fill="x", pady=10)
     B1 = Button(popup, text="OK", command = popup.destroy)
     B1.pack()
-    popup.mainloop()
+    #popup.wait_window()
     return
 
 def internet():
@@ -36,7 +37,9 @@ def sauvegarde():
     print(a2)
     chem = "Cartes/"+filename
     print(chem)
+    graph_sexe(a2,MyGlobals.chemin)
     carto(a2,MyGlobals.chemin,chem)
+    plt.show()
     return ma_liste_de_medoc
 
 def formatToFileName(string):
@@ -52,7 +55,8 @@ def formatToFileName(string):
     return string
 
 def cases():
-    case_a_cocher.flash()
+    print("coché")
+    #case_a_cocher.flash()
 
 def ouverture_fichier_de_base():
     window.fileName = filedialog.askopenfilename(filetype =(("CSV files","*.csv"),("PDF file","*.pdf"),("HTML files","*.html")))
@@ -114,6 +118,30 @@ def get_EAN13(name_atc,path_file):
                 l = [row["lat"],row["lon"]]
                 list.append(l)
         return list
+
+def graph_sexe(name_atc,path_data_file):
+    nb_individuals=[0,0,0] # indexes: 0=man, 1=woman, 2=other
+    list_ids=[]
+    with open(path_data_file,newline='') as csvfile:
+        reader = csv.DictReader(csvfile,delimiter=';',quotechar='|')
+        for row in reader:
+            if row["Ben_TI"]=='0' and row["Cli_TI"] not in list_ids and row["L_ATC3"]==name_atc:
+                nb_individuals[int(row["Cli_sexe"])]+=1
+                list_ids.append(row["Cli_TI"])
+        men_proportion=100*nb_individuals[0]/(nb_individuals[0]+nb_individuals[1])
+        women_proportion=100*nb_individuals[1]/(nb_individuals[0]+nb_individuals[1])
+        labels = 'Homme','Femme'
+        sizes = [men_proportion,women_proportion]
+        colors = ['blue','red']
+        plt.close()
+        plt.pie(sizes, labels=labels, colors=colors, 
+                autopct='%1.1f%%', shadow=True, startangle=90)
+        plt.axis('equal')
+        if not os.path.exists(os.path.abspath("Diagrammes\Sexes")): 
+            os.makedirs(os.path.abspath("Diagrammes\Sexes"))
+        plt.savefig(os.path.abspath('Diagrammes\Sexes\\'+name_atc+'.png'))
+        plt.show(block=False)
+    return  
 
 def carto(name_atc,path_data_file,path_html_file):
     list = []
@@ -193,7 +221,7 @@ case_a_cocher = Checkbutton(fr,text="Ouvrir la carte après exécution",font=("A
 case_a_cocher.pack()
 
 
-MyGlobals.fileHeader=['genre','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
+MyGlobals.fileHeader=['Ben_Unique_TI','Cli_sexe','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
 MyGlobals.myCSV = []
 MyGlobals.deroulant = ttk.Combobox(window, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
 MyGlobals.deroulant['state']='disabled'
