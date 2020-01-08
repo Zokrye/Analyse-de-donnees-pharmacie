@@ -8,7 +8,7 @@ from folium import plugins
 import os
 import matplotlib.pyplot as plt
 from PIL import ImageTk
-
+import threading
 
 class MyGlobals():pass
 
@@ -30,24 +30,35 @@ def internet():
     webbrowser.open_new("http://www.jeuxvideo.com/forums/1-51-44890961-1-0-1-0-j-ai-chie-dans-un-saladier-a-auchan.htm")
 
 def sauvegarde():
-    ma_liste_de_medoc = []
-    md1 = medoc_name.get()
-    md2 = medoc2_name.get()
-    ma_liste_de_medoc.append(md1)
-    ma_liste_de_medoc.append(md2)
-    print(ma_liste_de_medoc)
-    print(ma_liste_de_medoc[0],ma_liste_de_medoc[1])
     a2 = MyGlobals.deroulant.get()
-    filename=formatToFileName(a2)
-    print(a2)
-    chem =os.path.abspath("Cartes/"+filename)
-    if not os.path.exists(os.path.abspath("Cartes/")):
-        os.makedirs(os.path.abspath("Cartes/"))
-    print(chem)
-    graph_sexe(a2,MyGlobals.chemin)
-    carto(a2,MyGlobals.chemin,chem)
+    if a2 !='':
+        filename=formatToFileName(a2)
+        print(a2)
+        chemin_carte =os.path.abspath("Cartes/"+filename)
+        if not os.path.exists(os.path.abspath("Cartes/")):
+            os.makedirs(os.path.abspath("Cartes/"))
+        print(chemin_carte)
+
+        thr2 = threading.Thread(target=performAnalysis, args=(a2,chemin_carte), kwargs={})
+        thr2.start() 
+    else:
+        popupmsg("Veuillez sélectionner une catégorie de médicaments avant de lancer l'analyse")
+    return
+
+def performAnalysis(a2,chemin_carte):
+    nb_operations=valeur_case_graph_annee.get()+valeur_case_graph_sexe.get()+valeur_case_calcul_carte.get()
+    
+    if valeur_case_calcul_carte.get():
+        progressbar_title["text"]='Création de la carte en cours'
+        carto(a2,MyGlobals.chemin,chemin_carte)
+        progressbar["value"]+=100/nb_operations
+    if valeur_case_graph_sexe.get():
+        progressbar_title["text"]='Creation du graph \"Répartition selon le sexe\" en cours'
+        graph_sexe(a2,MyGlobals.chemin)
+        progressbar["value"]+=100/nb_operations
+    progressbar["value"]=0
+    progressbar_title["text"]=''
     plt.show()
-    return ma_liste_de_medoc
 
 def formatToFileName(string):
     string=string.replace("/","")
@@ -70,38 +81,62 @@ def ouverture_fichier_de_base():
     MyGlobals.chemin = window.fileName
     MyGlobals.myCSV = []
     if window.fileName!='':
-        with open(window.fileName, newline = '') as csvfile :
-            readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
-            header=readerMan.fieldnames
-            if header != MyGlobals.fileHeader:
-                MyGlobals.deroulant.set('')
-                MyGlobals.deroulant['values'] = []
-                MyGlobals.deroulant['state'] = 'disabled'
-                bouton_de_sauvegarde['state'] = 'disabled'
-                popupmsg('Le fichier selectionné est incorrect ou corrumpu')               
-                return
-            for row in readerMan :
-                if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
-                    MyGlobals.myCSV.append(row["L_ATC3"])
-        print(MyGlobals.myCSV[0])
-        print(MyGlobals.myCSV[1])
-        print(window.fileName)
-        MyGlobals.myCSV.sort()
-        for i in MyGlobals.myCSV :
-            print(i)
-        print("la taille = ",len(MyGlobals.myCSV))
-        a = 'PREPARATIONS THYROIDIENNES'
-        MyGlobals.deroulant['values']=MyGlobals.myCSV
-        MyGlobals.deroulant['state'] = 'readonly'
-        bouton_de_sauvegarde['state'] = 'normal'
-        if(a == MyGlobals.myCSV[1]) :
-            print('ok')
+        thr = threading.Thread(target=getAllATCCodes, args=(window.fileName,), kwargs={})
+        thr.start()
     else:
         MyGlobals.deroulant.set('')
         MyGlobals.deroulant['values'] = []
         MyGlobals.deroulant['state'] = 'disabled'
-        bouton_de_sauvegarde['state'] = 'disabled'
+        MyGlobals.deroulant2.set('')
+        MyGlobals.deroulant2['values'] = []
+        MyGlobals.deroulant2['state'] = 'disabled'
+        bouton_analyse['state'] = 'disabled'
     return([window.fileName,MyGlobals.myCSV])
+
+def getAllATCCodes(fileName):
+    #progressbar.pack(side=TOP)
+    progressbar_title['text']='Chargement du fichier en cours'
+    #progressbar_title.pack(expand=YES)
+    progressbar['mode']='indeterminate'
+    #progressbar.pack_forget()
+    progressbar.start()
+
+    with open(fileName, newline = '') as csvfile :
+        readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
+        header=readerMan.fieldnames
+        if header != MyGlobals.fileHeader:
+            MyGlobals.deroulant.set('')
+            MyGlobals.deroulant['values'] = []
+            MyGlobals.deroulant['state'] = 'disabled'
+            MyGlobals.deroulant2.set('')
+            MyGlobals.deroulant2['values'] = []
+            MyGlobals.deroulant2['state'] = 'disabled'
+            bouton_analyse['state'] = 'disabled'
+            popupmsg('Le fichier selectionné est incorrect ou corrumpu')               
+            return
+        for row in readerMan :
+            if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
+                MyGlobals.myCSV.append(row["L_ATC3"])
+    print(MyGlobals.myCSV[0])
+    print(MyGlobals.myCSV[1])
+    print(window.fileName)
+    MyGlobals.myCSV.sort()
+    for i in MyGlobals.myCSV :
+        print(i)
+    print("la taille = ",len(MyGlobals.myCSV))
+    a = 'PREPARATIONS THYROIDIENNES'
+    MyGlobals.deroulant['values']=MyGlobals.myCSV
+    MyGlobals.deroulant['state'] = 'readonly'
+    MyGlobals.deroulant2['values']=MyGlobals.myCSV
+    MyGlobals.deroulant2['state'] = 'readonly'
+    bouton_analyse['state'] = 'normal'
+    if(a == MyGlobals.myCSV[1]) :
+        print('ok')
+    progressbar_title['text']=''
+    #progressbar_title.pack_forget()
+    progressbar.stop()
+    progressbar['mode']='determinate'
+    #progressbar.pack_forget()
 
 def test_de_presence(maListe,monSujet):
     x = 1
@@ -188,7 +223,7 @@ def carto(name_atc,path_data_file,path_html_file):
         path_html_file+=".html"
 
     m.save(path_html_file)
-    if valeur_case.get()==1:
+    if valeur_case_affichage_carte.get()==1:
         print(os.path.abspath(path_html_file))
         webbrowser.open_new_tab(os.path.abspath(path_html_file))
     print("c'est fini")
@@ -198,9 +233,10 @@ def carto(name_atc,path_data_file,path_html_file):
 # On créé notre fenêtre
 window = Tk()
 window.title("Becquet Analisys")
-window.geometry("1280x720")
+window.geometry("850x500")
 window.iconbitmap("logo-pharmacie-médical.ico")
 window.minsize(480, 360)
+window.resizable(False, False)
 #window.config(background='#DD1616')
 
 canvas = Canvas(window,width = 1920, height = 1920, bg = 'blue')
@@ -232,9 +268,9 @@ menuFichier.add_command(label = "Quitter",command = quit)
 menuEdition.add_command(label = "Ouvrir",command = ouvrir_carte)
 
 # On ajoute une frame
-fr = Frame(canvas,bg='', bd='2', relief=SOLID)
+fr = Frame(canvas, bd='2', relief=SOLID)
 fr.place(x=10,y=10)
-fr2 = Frame(canvas,bg='', bd='2', relief=SOLID)
+fr2 = Frame(fr, bd='2', relief=SOLID)
 # on met qqs éléments
 #lab_titre = Label(fr, text="Un Deux Un Deux", font=("Arial", 50), bg='#DD1616', fg='white')
 #lab_titre.pack(expand=YES)
@@ -244,31 +280,63 @@ fr2 = Frame(canvas,bg='', bd='2', relief=SOLID)
 
 
 fr.grid(row=0,column=0,sticky=W,padx=20, pady=20)
-fr2.grid(row=0,column=1,sticky=W,padx=60)
+
+
 #fr.grid(row=0, column=0)
+
+
+def coche_calcul_carte():
+    if valeur_case_calcul_carte.get()==False:
+        case_affichage_carte['state']='disabled'
+        valeur_case_affichage_carte.set(False)
+    else:
+        case_affichage_carte['state']='normal'
+def ajout_retrait_ligne():   
+    if MyGlobals.deroulant2.winfo_ismapped():
+        MyGlobals.deroulant2.grid_forget()
+        bouton_ajout_ligne['text']='+'
+    else:
+        MyGlobals.deroulant2.grid(row=1,column=0,pady =10)
+        bouton_ajout_ligne['text']='-'
+
 MyGlobals.deroulant = ttk.Combobox(fr, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
 MyGlobals.deroulant['state']='disabled'
-MyGlobals.deroulant.pack(expand = YES)
+MyGlobals.deroulant.grid(row=0,column=0,pady =10)
 
-valeur_case = BooleanVar()
-valeur_case1 = BooleanVar()
-valeur_case2 = BooleanVar()
-valeur_case3 = BooleanVar()
-case_a_cocher = Checkbutton(fr2,text="Ouvrir la carte après exécution", font=("Arial", 15),bg='#BBE9E7', fg='#000000', variable=valeur_case)
-case_a_cocher.pack()
-case_a_cocher1 = Checkbutton(fr2,text="Ouvrir la carte après exécution",font=("Arial", 15), fg='#000000', variable=valeur_case1)
-case_a_cocher1.pack()
-case_a_cocher2 = Checkbutton(fr2,text="Ouvrir la carte après exécution",font=("Arial", 15), fg='#000000', variable=valeur_case2)
-case_a_cocher2.pack()
-case_a_cocher3 = Checkbutton(fr2,text="Ouvrir la carte après exécution",font=("Arial", 15), fg='#000000', variable=valeur_case3)
-case_a_cocher3.pack()
+MyGlobals.deroulant2 = ttk.Combobox(fr, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
+MyGlobals.deroulant2['state']='disabled'
 
-bouton_de_sauvegarde = Button(fr, text="Lancer l'analyse", font=("Arial", 30), bg='white', fg='#000000', command = sauvegarde)
-bouton_de_sauvegarde['state'] = 'disabled'
-bouton_de_sauvegarde.pack(pady=25, fill=X)
+bouton_ajout_ligne= Button(fr, text="+",command = ajout_retrait_ligne)
+bouton_ajout_ligne.grid(row=0,column=1,pady = 10)
+
+fr2.grid(row=2,column=0,sticky=E+W)
+
+bouton_analyse = Button(fr, text="Lancer l'analyse", font=("Arial", 30), bg='white', fg='#000000', command = sauvegarde)
+bouton_analyse['state'] = 'disabled'
+bouton_analyse.grid(row=3,column=0,pady =10)
+
+progressbar=ttk.Progressbar(fr,orient="horizontal",length=300,mode="determinate")
+progressbar.grid(row=4,column=0,pady =10)
+
+progressbar_title=Label(fr, text="") 
+progressbar_title.grid(row=5,column=0,pady = 10)
 
 
+valeur_case_affichage_carte = BooleanVar()
+valeur_case_graph_sexe = BooleanVar()
+valeur_case_graph_annee = BooleanVar()
+valeur_case_calcul_carte = BooleanVar()
 
+case_calcul_carte = Checkbutton(fr2,text="Créer la carte",font=("Arial", 15), fg='#000000', variable=valeur_case_calcul_carte, command=coche_calcul_carte)
+case_calcul_carte.grid(row=0,column=0,pady = 10,sticky=W)
+case_affichage_carte = Checkbutton(fr2,text="Ouvrir la carte après exécution", font=("Arial", 15), fg='#000000', variable=valeur_case_affichage_carte)
+case_affichage_carte.grid(row=0,column=1,padx=80,pady =10,sticky=W)
+case_affichage_carte['state']='disabled'
+
+case_graph_sexe = Checkbutton(fr2,text="Répartition selon le sexe",font=("Arial", 15), fg='#000000', variable=valeur_case_graph_sexe)
+case_graph_sexe.grid(row=1,column=0,pady =10,sticky=W)
+case_graph_annee = Checkbutton(fr2,text="Répartion sur l'année",font=("Arial", 15), fg='#000000', variable=valeur_case_graph_annee)
+case_graph_annee.grid(row=1,column=1,padx=80,pady=10,sticky=W)
 
 
 
