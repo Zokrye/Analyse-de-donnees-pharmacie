@@ -9,10 +9,11 @@ import os
 import matplotlib.pyplot as plt
 
 
-
 class MyGlobals():pass
+
 def popupmsg(msg):
     popup = Toplevel()
+    popup.iconbitmap("logo-pharmacie-médical.ico")
     popup.title("Attention")
     label = Label(popup, text=msg) #Can add a font arg here
     label.pack(side="top", fill="x", pady=10)
@@ -35,7 +36,9 @@ def sauvegarde():
     a2 = MyGlobals.deroulant.get()
     filename=formatToFileName(a2)
     print(a2)
-    chem = "Cartes/"+filename
+    chem =os.path.abspath("Cartes/"+filename)
+    if not os.path.exists(os.path.abspath("Cartes/")):
+        os.makedirs(os.path.abspath("Cartes/"))
     print(chem)
     graph_sexe(a2,MyGlobals.chemin)
     carto(a2,MyGlobals.chemin,chem)
@@ -103,6 +106,33 @@ def test_de_presence(maListe,monSujet):
             if i == monSujet:
                 x = 0
     return x
+
+def showCity():
+    print(MyGlobals.choix_ville.get())
+
+def menuParametre():
+    para = Toplevel()
+    para.title("Paramètres")
+    para.geometry("360x140")
+    para.iconbitmap("logo-pharmacie-médical.ico")
+    labelPara = Label(para) #Can add a font arg here
+    labelPara.pack(side="top", fill="x", pady=10)
+    MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[52.4218,3.7876])]
+    MyGlobals.choix_ville = IntVar()
+    MyGlobals.choix_ville.set(0)
+    for val,ville in enumerate(MyGlobals.liste_villes):
+        if ville[0] == "Liévin" :
+            MyGlobals.choix_ville.set(1)
+        else :
+            MyGlobals.choix_ville.set(0)
+        Radiobutton(para,text = ville[0],padx = 20, variable = MyGlobals.choix_ville,value = val,command = choix_lieu).pack()
+    B1 = Button(para, text="OK", command = para.destroy)
+    B1.pack()
+    para.mainloop()
+
+def choix_lieu():
+    print("Vous avez choisi ",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0]," avec comme coordonnées [",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],",",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1],"]")
+
 
 def ouvrir_carte():
     window.fileName = filedialog.askopenfilename(filetype =(("HTML files","*.html"),))
@@ -181,7 +211,7 @@ menus.add_cascade(label="Outils",menu=menuOutils)
 menus.add_cascade(label="Help",menu=menuHelp)
 menuFichier.add_command(label = "Nouveau")
 menuFichier.add_command(label = "Ouvrir",command = ouverture_fichier_de_base)
-menuFichier.add_command(label = "Enregistrer")
+menuFichier.add_command(label = "Paramètres",command = menuParametre)
 menuFichier.add_command(label = "Quitter",command = quit)
 menuEdition.add_command(label = "Ouvrir",command = ouvrir_carte)
 
