@@ -8,12 +8,15 @@ from folium import plugins
 import os
 import matplotlib.pyplot as plt
 from PIL import ImageTk
+from all_years_curves_one_atc import show_graph_atc3
 import threading
 
 class MyGlobals():pass
 
 MyGlobals.fileHeader=['Ben_Unique_TI','Cli_sexe','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
 MyGlobals.myCSV = []
+MyGlobals.lieu_actuel = ["Liévin",[50.4218,2.7876]]
+MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[50.6333,3.0667])]
 
 def popupmsg(msg):
     popup = Toplevel()
@@ -38,7 +41,6 @@ def sauvegarde():
         if not os.path.exists(os.path.abspath("Cartes/")):
             os.makedirs(os.path.abspath("Cartes/"))
         print(chemin_carte)
-
         thr2 = threading.Thread(target=performAnalysis, args=(a2,chemin_carte), kwargs={})
         thr2.start() 
     else:
@@ -55,6 +57,10 @@ def performAnalysis(a2,chemin_carte):
     if valeur_case_graph_sexe.get():
         progressbar_title["text"]='Creation du graph \"Répartition selon le sexe\" en cours'
         graph_sexe(a2,MyGlobals.chemin)
+        progressbar["value"]+=100/nb_operations
+    if valeur_case_graph_annee.get() :
+        progressbar_title["text"]='Creation du graph \"Année\" en cours'
+        fig_an = show_graph_atc3(a2,MyGlobals.chemin)
         progressbar["value"]+=100/nb_operations
     progressbar["value"]=0
     progressbar_title["text"]=''
@@ -156,11 +162,10 @@ def menuParametre():
     para.iconbitmap("logo-pharmacie-médical.ico")
     labelPara = Label(para) #Can add a font arg here
     labelPara.pack(side="top", fill="x", pady=10)
-    MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[52.4218,3.7876])]
     MyGlobals.choix_ville = IntVar()
     MyGlobals.choix_ville.set(0)
     for val,ville in enumerate(MyGlobals.liste_villes):
-        if ville[0] == "Liévin" :
+        if ville[0] == MyGlobals.lieu_actuel[0] :
             MyGlobals.choix_ville.set(1)
         else :
             MyGlobals.choix_ville.set(0)
@@ -170,7 +175,8 @@ def menuParametre():
     para.mainloop()
 
 def choix_lieu():
-    print("Vous avez choisi ",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0]," avec comme coordonnées [",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],",",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1],"]")
+    MyGlobals.lieu_actuel = [MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0],[MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1]]]
+    print("Vous avez choisi ",MyGlobals.lieu_actuel[0]," avec comme coordonnées ",MyGlobals.lieu_actuel[1])
 
 
 def ouvrir_carte():
@@ -212,10 +218,16 @@ def graph_sexe(name_atc,path_data_file):
         plt.show(block=False)
     return  
 
+def sauve_annee(fig,name_atc):
+    if 1==1 :
+        if not os.path.exists(os.path.abspath("Diagrammes\Année")):
+            os.makedirs(os.path.abspath("Diagrammes\Année"))
+        plt.savefig(os.path.abspath('Diagrammes\Année\\'+name_atc+'.png'))
+
 def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
-    m = folium.Map([50.4218,2.7876], zoom_start=14)
+    m = folium.Map(MyGlobals.lieu_actuel[1], zoom_start=14)
 
 
     m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
@@ -242,7 +254,7 @@ window.resizable(False, False)
 canvas = Canvas(window,width = 1920, height = 1920, bg = 'blue')
 canvas.pack(expand = YES, fill = BOTH)
 
-image = ImageTk.PhotoImage(file = "D:\\Users\\Alexandre\\Desktop\\pharmacie_project\\Analyse de donnees pharmacie\\background.jpg")
+image = ImageTk.PhotoImage(file = os.path.abspath("background.jpg"))
 canvas.create_image(0, 0, image = image, anchor = NW)
 
 
