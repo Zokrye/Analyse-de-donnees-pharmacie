@@ -9,6 +9,7 @@ import os
 import matplotlib.pyplot as plt
 from PIL import ImageTk
 from all_years_curves_one_atc import show_graph_atc3
+from histo_between_two_atc import show_histo_between_atc,get_day_month_year
 import threading
 
 class MyGlobals():pass
@@ -17,6 +18,7 @@ MyGlobals.fileHeader=['Ben_Unique_TI','Cli_sexe','Cli_TI','Ben_TI','nom_voie','n
 MyGlobals.myCSV = []
 MyGlobals.lieu_actuel = ["Liévin",[50.4218,2.7876]]
 MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[50.6333,3.0667])]
+MyGlobals.mesDates = []
 
 def popupmsg(msg):
     popup = Toplevel()
@@ -49,7 +51,7 @@ def sauvegarde():
 
 def performAnalysis(a2,chemin_carte):
     nb_operations=valeur_case_graph_annee.get()+valeur_case_graph_sexe.get()+valeur_case_calcul_carte.get()
-    
+
     if valeur_case_calcul_carte.get():
         progressbar_title["text"]='Création de la carte en cours'
         carto(a2,MyGlobals.chemin,chemin_carte)
@@ -60,7 +62,12 @@ def performAnalysis(a2,chemin_carte):
         progressbar["value"]+=100/nb_operations
     if valeur_case_graph_annee.get() :
         progressbar_title["text"]='Creation du graph \"Année\" en cours'
-        fig_an = show_graph_atc3(a2,MyGlobals.chemin)
+        show_graph_atc3(a2,MyGlobals.chemin)
+        progressbar["value"]+=100/nb_operations
+    if bouton_ajout_ligne['text']=='-' and MyGlobals.deroulant2.get() != '' and MyGlobals.deroulant_dates.get() != '':
+        nb_operations= nb_operations+1
+        progressbar_title["text"]='Creation du graph \"Croisement\" en cours'
+        show_histo_between_atc(a2,MyGlobals.deroulant2.get(),MyGlobals.deroulant_dates.get(),MyGlobals.chemin)
         progressbar["value"]+=100/nb_operations
     progressbar["value"]=0
     progressbar_title["text"]=''
@@ -123,9 +130,13 @@ def getAllATCCodes(fileName):
         for row in readerMan :
             if test_de_presence(MyGlobals.myCSV,row["L_ATC3"]) == 1  or len(MyGlobals.myCSV) ==0 :
                 MyGlobals.myCSV.append(row["L_ATC3"])
+            annee = get_day_month_year(row["Date_order"])[2]
+            if test_de_presence(MyGlobals.mesDates,annee) == 1 or len(MyGlobals.mesDates)==0 :
+                MyGlobals.mesDates.append(annee)
     print(MyGlobals.myCSV[0])
     print(MyGlobals.myCSV[1])
     print(window.fileName)
+    MyGlobals.mesDates.sort()
     MyGlobals.myCSV.sort()
     for i in MyGlobals.myCSV :
         print(i)
@@ -135,6 +146,8 @@ def getAllATCCodes(fileName):
     MyGlobals.deroulant['state'] = 'readonly'
     MyGlobals.deroulant2['values']=MyGlobals.myCSV
     MyGlobals.deroulant2['state'] = 'readonly'
+    MyGlobals.deroulant_dates['values'] = MyGlobals.mesDates
+    MyGlobals.deroulant_dates['state'] = 'readonly'
     bouton_analyse['state'] = 'normal'
     if(a == MyGlobals.myCSV[1]) :
         print('ok')
@@ -228,8 +241,6 @@ def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
     m = folium.Map(MyGlobals.lieu_actuel[1], zoom_start=14)
-
-
     m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
     if not ".html" in path_html_file:
         path_html_file+=".html"
@@ -303,12 +314,16 @@ def coche_calcul_carte():
         valeur_case_affichage_carte.set(False)
     else:
         case_affichage_carte['state']='normal'
+
+
 def ajout_retrait_ligne():   
-    if MyGlobals.deroulant2.winfo_ismapped():
+    if MyGlobals.deroulant2.winfo_ismapped() and MyGlobals.deroulant_dates.winfo_ismapped():
         MyGlobals.deroulant2.grid_forget()
+        MyGlobals.deroulant_dates.grid_forget()
         bouton_ajout_ligne['text']='+'
     else:
         MyGlobals.deroulant2.grid(row=1,column=0,pady =10)
+        MyGlobals.deroulant_dates.grid(row=2,column=0,pady=5)
         bouton_ajout_ligne['text']='-'
 
 MyGlobals.deroulant = ttk.Combobox(fr, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
@@ -318,20 +333,23 @@ MyGlobals.deroulant.grid(row=0,column=0,pady =10)
 MyGlobals.deroulant2 = ttk.Combobox(fr, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
 MyGlobals.deroulant2['state']='disabled'
 
+MyGlobals.deroulant_dates = ttk.Combobox(fr, values = MyGlobals.mesDates , font = ("Arial",10), width = 30)
+MyGlobals.deroulant_dates['state']='disabled'
+
 bouton_ajout_ligne= Button(fr, text="+",command = ajout_retrait_ligne)
 bouton_ajout_ligne.grid(row=0,column=1,pady = 10)
 
-fr2.grid(row=2,column=0,sticky=E+W)
+fr2.grid(row=3,column=0,sticky=E+W)
 
 bouton_analyse = Button(fr, text="Lancer l'analyse", font=("Arial", 30), bg='white', fg='#000000', command = sauvegarde)
 bouton_analyse['state'] = 'disabled'
-bouton_analyse.grid(row=3,column=0,pady =10)
+bouton_analyse.grid(row=4,column=0,pady =10)
 
 progressbar=ttk.Progressbar(fr,orient="horizontal",length=300,mode="determinate")
-progressbar.grid(row=4,column=0,pady =10)
+progressbar.grid(row=5,column=0,pady =10)
 
 progressbar_title=Label(fr, text="") 
-progressbar_title.grid(row=5,column=0,pady = 10)
+progressbar_title.grid(row=6,column=0,pady = 10)
 
 
 valeur_case_affichage_carte = BooleanVar()
