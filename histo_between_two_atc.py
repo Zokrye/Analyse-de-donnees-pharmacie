@@ -47,6 +47,8 @@ def get_dayMonth_list_dateTimeFormat_oneYear(l):
 def add_plot(name_atc,list_atc,width_bar,fix_day):
     list_tupple_date = get_month_year_list(list_atc,str(fix_day))
     list_one_year=get_dayMonth_list_dateTimeFormat_oneYear(list_tupple_date)
+    if(len(list_one_year) == 0):
+        return
     list_one_year_count =Counter(list_one_year)
     list_one_year_count_sorted = sorted(list_one_year_count.items(), key=lambda t: t[0])
     x_val = [x[0] for x in list_one_year_count_sorted]
@@ -69,6 +71,9 @@ def show_bar_atc1_and_atc2(list_client1,list_client2,day,width_bar,name_bar):
             if(i[0]==j[0] and i[1]==j[1]):
                 list_mix.append(datetime.datetime.strptime("1980-"+i[1], '%Y-%m-%d'))
                 break
+
+    if(len(list_mix)==0):
+        return
 
     list_mix_count =Counter(list_mix)
     list_one_year_count_sorted = sorted(list_mix_count.items(), key=lambda t: t[0])
@@ -109,7 +114,7 @@ def show_histo_between_atc(name_atc1,name_atc2,year,path_data_file):
 
 
 
-#show_histo_between_atc("PREPARATIONS THYROIDIENNES","VITAMINE B12 ET ACIDE FOLIQUE","2018","C:/Users/burak/PycharmProjects/ph3001/final_table.csv")
+show_histo_between_atc("ADJUVANTS EN CHIRURGIE OPHTALMIQUE","AGENTS ANTIPARATHYROÏDIENS","2017","C:/Users/burak/PycharmProjects/ph3001/final_table.csv")
 
 
 
