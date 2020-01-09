@@ -15,6 +15,8 @@ class MyGlobals():pass
 
 MyGlobals.fileHeader=['Ben_Unique_TI','Cli_sexe','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
 MyGlobals.myCSV = []
+MyGlobals.lieu_actuel = ["Liévin",[50.4218,2.7876]]
+MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[50.6333,3.0667])]
 
 def popupmsg(msg):
     popup = Toplevel()
@@ -160,11 +162,10 @@ def menuParametre():
     para.iconbitmap("logo-pharmacie-médical.ico")
     labelPara = Label(para) #Can add a font arg here
     labelPara.pack(side="top", fill="x", pady=10)
-    MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[52.4218,3.7876])]
     MyGlobals.choix_ville = IntVar()
     MyGlobals.choix_ville.set(0)
     for val,ville in enumerate(MyGlobals.liste_villes):
-        if ville[0] == "Liévin" :
+        if ville[0] == MyGlobals.lieu_actuel[0] :
             MyGlobals.choix_ville.set(1)
         else :
             MyGlobals.choix_ville.set(0)
@@ -174,7 +175,8 @@ def menuParametre():
     para.mainloop()
 
 def choix_lieu():
-    print("Vous avez choisi ",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0]," avec comme coordonnées [",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],",",MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1],"]")
+    MyGlobals.lieu_actuel = [MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0],[MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1]]]
+    print("Vous avez choisi ",MyGlobals.lieu_actuel[0]," avec comme coordonnées ",MyGlobals.lieu_actuel[1])
 
 
 def ouvrir_carte():
@@ -225,7 +227,7 @@ def sauve_annee(fig,name_atc):
 def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
-    m = folium.Map([50.4218,2.7876], zoom_start=14)
+    m = folium.Map(MyGlobals.lieu_actuel[1], zoom_start=14)
 
 
     m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
