@@ -8,6 +8,7 @@ from folium import plugins
 import os
 import matplotlib.pyplot as plt
 from PIL import ImageTk
+from all_years_curves_one_atc import show_graph_atc3
 import threading
 
 class MyGlobals():pass
@@ -38,7 +39,6 @@ def sauvegarde():
         if not os.path.exists(os.path.abspath("Cartes/")):
             os.makedirs(os.path.abspath("Cartes/"))
         print(chemin_carte)
-
         thr2 = threading.Thread(target=performAnalysis, args=(a2,chemin_carte), kwargs={})
         thr2.start() 
     else:
@@ -55,6 +55,10 @@ def performAnalysis(a2,chemin_carte):
     if valeur_case_graph_sexe.get():
         progressbar_title["text"]='Creation du graph \"Répartition selon le sexe\" en cours'
         graph_sexe(a2,MyGlobals.chemin)
+        progressbar["value"]+=100/nb_operations
+    if valeur_case_graph_annee.get() :
+        progressbar_title["text"]='Creation du graph \"Année\" en cours'
+        fig_an = show_graph_atc3(a2,MyGlobals.chemin)
         progressbar["value"]+=100/nb_operations
     progressbar["value"]=0
     progressbar_title["text"]=''
@@ -212,6 +216,12 @@ def graph_sexe(name_atc,path_data_file):
         plt.show(block=False)
     return  
 
+def sauve_annee(fig,name_atc):
+    if 1==1 :
+        if not os.path.exists(os.path.abspath("Diagrammes\Année")):
+            os.makedirs(os.path.abspath("Diagrammes\Année"))
+        plt.savefig(os.path.abspath('Diagrammes\Année\\'+name_atc+'.png'))
+
 def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
@@ -242,7 +252,7 @@ window.resizable(False, False)
 canvas = Canvas(window,width = 1920, height = 1920, bg = 'blue')
 canvas.pack(expand = YES, fill = BOTH)
 
-image = ImageTk.PhotoImage(file = "D:\\Users\\Alexandre\\Desktop\\pharmacie_project\\Analyse de donnees pharmacie\\background.jpg")
+image = ImageTk.PhotoImage(file = os.path.abspath("background.jpg"))
 canvas.create_image(0, 0, image = image, anchor = NW)
 
 
