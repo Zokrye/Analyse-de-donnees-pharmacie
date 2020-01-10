@@ -5,7 +5,8 @@ import matplotlib.dates as mdates
 from collections import Counter
 from future.backports import datetime
 from interactiveLegend import InteractiveLegend
-
+import numpy as np
+from variables import Variables
 
 
 def interactive_legend(ax=None):
@@ -93,28 +94,8 @@ def show_graph_atc3(name_atc,path_data_file):
     # On récupère une liste de toutes les années différentes
     list_year = yeared_list(list_tupple_date)
 
-    plt.rcParams["figure.figsize"] = (12,5)
-    plt.figure(name_atc)
-    locator = mdates.MonthLocator()
-    fmt = mdates.DateFormatter('%b')
-    X = plt.gca().xaxis
-    X.set_major_locator(locator)
-    X.set_major_formatter(fmt)
-
-    for i in list_year:
-        # On convertit les dates d'une année choisit pour qu'elles correspondent au format d'affichage
-        list_dateformat = get_dayMonth_list_dateTimeFormat(list_tupple_date,i)
-        add_plot(list_dateformat,i)
-
-    plt.legend( bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.)
-    plt.title(name_atc)
-    plt.legend = interactive_legend()
-    if 1==1 :
-        if not os.path.exists(os.path.abspath("Diagrammes\Année")):
-            os.makedirs(os.path.abspath("Diagrammes\Année"))
-        plt.savefig(os.path.abspath('Diagrammes\Année\\'+name_atc+'.png'))
-    plt.show()
-    return plt
+    Variables.queue1.put((list_tupple_date,list_year,name_atc))
+    return
 
 def add_plot(list,label):
     l=Counter(list)
@@ -122,9 +103,6 @@ def add_plot(list,label):
     x_val = [x[0] for x in l]
     y_val = [x[1] for x in l]
     plt.plot(x_val,y_val,label=label)
-
-
-
 
 
 

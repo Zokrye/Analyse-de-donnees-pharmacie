@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from collections import Counter
 from future.backports import datetime
+from variables import Variables
 
 
 def get_date_for_one_year(name_atc,path_file,year):
@@ -58,7 +59,7 @@ def add_plot(name_atc,list_atc,width_bar,fix_day):
 
 def get_month_from_datetime(d):
     s = d.split('/')
-    return s[1];
+    return s[1]
 
 def show_bar_atc1_and_atc2(list_client1,list_client2,day,width_bar,name_bar):
     list_mix = []
@@ -83,38 +84,26 @@ def show_bar_atc1_and_atc2(list_client1,list_client2,day,width_bar,name_bar):
 
 
 def show_histo_between_atc(name_atc1,name_atc2,year,path_data_file):
-    width_bar = 4
-    plt.rcParams["figure.figsize"] = (12,7)
-    plt.figure(year+": "+name_atc1 +" VS "+name_atc2)
-
-    fix_day1=1
-    fix_day2=5
-    fix_day3=9
-
     list_atc1,list_client_atc1 = get_date_for_one_year(name_atc1,path_data_file,year)
     list_atc2,list_client_atc2 = get_date_for_one_year(name_atc2,path_data_file,year)
+    
+    Variables.queue1.put((name_atc1,name_atc2,year,list_atc1,list_atc2,list_client_atc1,list_client_atc2))
+    return
 
-    add_plot(name_atc1,list_atc1,width_bar,fix_day1)
-    add_plot(name_atc2,list_atc2,width_bar,fix_day2)
-
-    show_bar_atc1_and_atc2(list_client_atc1,list_client_atc2,fix_day3,width_bar,"Achat des deux par une même personne le même mois")
-
-    locator = mdates.MonthLocator()
-    fmt = mdates.DateFormatter('%b')
-    X = plt.gca().xaxis
-    X.set_major_locator(locator)
-    X.set_major_formatter(fmt)
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-            mode="expand", borderaxespad=0.,fontsize='small')
-    if 1==1 :
-        if not os.path.exists(os.path.abspath("Diagrammes\Croisements")):
-            os.makedirs(os.path.abspath("Diagrammes\Croisements"))
-        plt.savefig(os.path.abspath('Diagrammes\Croisements\\'+name_atc1+'+'+name_atc2+'.png'))
-    plt.show()
+def formatToFileName(string):
+    string=string.replace("/","")
+    string=string.replace("\\","")
+    string=string.replace(":","")
+    string=string.replace("*","")
+    string=string.replace("?","")
+    string=string.replace("\"","")
+    string=string.replace("<","")
+    string=string.replace(">","")
+    string=string.replace("|","")
+    return string
 
 
-
-show_histo_between_atc("ADJUVANTS EN CHIRURGIE OPHTALMIQUE","AGENTS ANTIPARATHYROÏDIENS","2017","C:/Users/burak/PycharmProjects/ph3001/final_table.csv")
+#show_histo_between_atc("ADJUVANTS EN CHIRURGIE OPHTALMIQUE","AGENTS ANTIPARATHYROÏDIENS","2017","C:/Users/burak/PycharmProjects/ph3001/final_table.csv")
 
 
 
