@@ -54,8 +54,6 @@ def sauvegarde():
         if not os.path.exists(os.path.abspath("Cartes/")):
             os.makedirs(os.path.abspath("Cartes/"))
         print(chemin_carte)
-        #p = Process(target=performAnalysis, args=(MyGlobals.deroulant.get(),chemin_carte))
-        #p.start()
         Variables.queue1 = queue.Queue()
         plt.close()
         thr2 = threading.Thread(target=performAnalysis, args=(MyGlobals.deroulant.get(),chemin_carte,queue), kwargs={})
@@ -100,7 +98,7 @@ def process_queue_annee():
 
         plt.legend( bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.)
         plt.title(name_atc)
-        #plt.legend = interactive_legend()
+        leg = interactive_legend()
         if 1==1 :
             if not os.path.exists(os.path.abspath("Diagrammes\Année")):
                 os.makedirs(os.path.abspath("Diagrammes\Année"))
