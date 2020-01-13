@@ -6,6 +6,7 @@ import csv
 import folium
 from folium import plugins
 import os
+import sys
 import matplotlib
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
@@ -380,7 +381,7 @@ menus.add_cascade(label="Help",menu=menuHelp)
 menuFichier.add_command(label = "Nouveau")
 menuFichier.add_command(label = "Ouvrir",command = ouverture_fichier_de_base)
 menuFichier.add_command(label = "Paramètres",command = menuParametre)
-menuFichier.add_command(label = "Quitter",command = quit)
+menuFichier.add_command(label = "Quitter",command = sys.exit)
 menuEdition.add_command(label = "Ouvrir",command = ouvrir_carte)
 
 # On ajoute une frame
