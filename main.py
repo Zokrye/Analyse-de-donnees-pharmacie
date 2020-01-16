@@ -15,7 +15,7 @@ from all_years_curves_one_atc import show_graph_atc3,get_dayMonth_list_dateTimeF
 from histo_between_two_atc import show_histo_between_atc,get_day_month_year,show_bar_atc1_and_atc2, add_plot as twoatc_add_plot
 import threading
 import queue
-from variables import Variables
+from variables import MyGlobals
 import subprocess
 
 
@@ -128,7 +128,7 @@ def process_queue_croisement():
         if 1==1 :
             if not os.path.exists(os.path.abspath("Diagrammes\Croisements")):
                 os.makedirs(os.path.abspath("Diagrammes\Croisements"))
-            plt.savefig(os.path.abspath('Diagrammes\Croisements\\'+formatToFileName(name_atc1+'+'+name_atc2)+'.png'))
+            plt.savefig(os.path.abspath('Diagrammes\Croisements\\'+formatToFileName(name_atc1+'+'+name_atc2)+MyGlobals.deroulant_dates.get()+'.png'))
         plt.show()
     except queue.Empty:
         print("queue empty")
@@ -322,7 +322,7 @@ def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
     m = folium.Map(MyGlobals.lieu_actuel[1], zoom_start=14)
-    m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'blue', 0.6: 'green', 1: 'red'}))
+    m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
     if not ".html" in path_html_file:
         path_html_file+=".html"
     m.save(path_html_file)
