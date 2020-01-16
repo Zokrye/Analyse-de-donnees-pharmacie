@@ -18,6 +18,8 @@ import time
 from multiprocessing import Process
 import queue
 from variables import Variables
+import jinja2.ext
+import subprocess
 
 
 
@@ -207,6 +209,13 @@ def ouverture_fichier_de_base():
         bouton_analyse['state'] = 'disabled'
     return([window.fileName,MyGlobals.myCSV])
 
+def aide():
+    os.startfile(os.path.abspath("Notice d'utilisation.pdf"))
+
+def open_diagram_folder():
+    subprocess.Popen('explorer '+os.path.abspath("Diagrammes"))
+
+
 def getAllATCCodes(fileName):
     #progressbar.pack(side=TOP)
     progressbar_title['text']='Chargement du fichier en cours'
@@ -294,9 +303,8 @@ def choix_lieu():
 
 
 def ouvrir_carte():
-    window.fileName = filedialog.askopenfilename(filetype =(("HTML files","*.html"),))
-    webbrowser.open_new(window.fileName)
-    return(window.fileName)
+    subprocess.Popen('explorer '+os.path.abspath("Cartes"))
+    
 
 def get_EAN13(name_atc,path_file):
     with open(path_file,newline='') as csvfile:
@@ -365,24 +373,20 @@ canvas.create_image(0, 0, image = image, anchor = NW)
 
 
 
-
-
-
 #On créé des onglets menus etc
 menus = Menu(window)
 menuFichier = Menu(menus)
 menuEdition = Menu(menus)
-menuOutils = Menu(menus)
 menuHelp = Menu(menus)
 menus.add_cascade(label="Fichiers",menu=menuFichier)
-menus.add_cascade(label="Cartes",menu=menuEdition)
-menus.add_cascade(label="Outils",menu=menuOutils)
-menus.add_cascade(label="Help",menu=menuHelp)
-menuFichier.add_command(label = "Nouveau")
+menus.add_cascade(label="Résultats",menu=menuEdition)
+menus.add_cascade(label="Aide",menu=menuHelp)
+menuHelp.add_command(label = "Notice d'utilisation",command =aide)
+menuEdition.add_command(label = "Diagrammes",command =open_diagram_folder)
 menuFichier.add_command(label = "Ouvrir",command = ouverture_fichier_de_base)
 menuFichier.add_command(label = "Paramètres",command = menuParametre)
 menuFichier.add_command(label = "Quitter",command = sys.exit)
-menuEdition.add_command(label = "Ouvrir",command = ouvrir_carte)
+menuEdition.add_command(label = "Cartes",command = ouvrir_carte)
 
 # On ajoute une frame
 fr = Frame(canvas, bd='2', relief=SOLID)
