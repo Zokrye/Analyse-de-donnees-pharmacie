@@ -12,25 +12,15 @@ import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
 from PIL import ImageTk
 from all_years_curves_one_atc import show_graph_atc3,get_dayMonth_list_dateTimeFormat,add_plot as annee_add_plot,interactive_legend
-from histo_between_two_atc import show_histo_between_atc,get_day_month_year,get_date_for_one_year,show_bar_atc1_and_atc2, add_plot as twoatc_add_plot
+from histo_between_two_atc import show_histo_between_atc,get_day_month_year,show_bar_atc1_and_atc2, add_plot as twoatc_add_plot
 import threading
-import time
-from multiprocessing import Process
 import queue
 from variables import Variables
-import jinja2.ext
 import subprocess
 
 
 
-class MyGlobals():pass
-#MyGlobals.queue1 = queue.Queue()
-MyGlobals.fileHeader=['Ben_Unique_TI','Cli_sexe','Cli_TI','Ben_TI','nom_voie','nom_commune','lon','lat','nom','EAN13','Date_order','L_ATC3']
-MyGlobals.myCSV = []
-MyGlobals.lieu_actuel = ["Liévin",[50.4218,2.7876]]
-MyGlobals.liste_villes = [("Liévin",1,[50.4218,2.7876]),("Lille",2,[50.6333,3.0667])]
-MyGlobals.mesDates = []
-
+#Fonction qui permet de notifier l'utilisateur en cas de mauvaise manipulation de sa part
 def popupmsg(msg):
     popup = Toplevel()
     popup.iconbitmap("logo-pharmacie-médical.ico")
@@ -41,31 +31,30 @@ def popupmsg(msg):
     B1.pack()
     return
 
-def sauvegarde():
-    a2 = MyGlobals.deroulant.get()
 
+#Fonction permettant de lancer toutes les analyses selectionnées puis de sauvegarder les fichiers d'analyses dans des dossiers prévus pour
+def sauvegarde():
+    a2 = MyGlobals.deroulant.get()#On récupère ici le nom de l'ATC que l'utilisateur a décidé de traîter
     if MyGlobals.deroulant2.winfo_ismapped() and (MyGlobals.deroulant2.get() == '' or MyGlobals.deroulant_dates.get() == '' or a2 ==''):
         popupmsg("Veuillez sélectionner les deux catégories de médicaments ainsi que la période avant de lancer l'analyse")
-
     elif a2 =='' and not MyGlobals.deroulant2.winfo_ismapped():
         popupmsg("Veuillez sélectionner une catégorie de médicaments avant de lancer l'analyse")
-
     else:
         filename=formatToFileName(a2)
-        print(a2)
         chemin_carte =os.path.abspath("Cartes/"+filename)
         if not os.path.exists(os.path.abspath("Cartes/")):
             os.makedirs(os.path.abspath("Cartes/"))
-        print(chemin_carte)
-        Variables.queue1 = queue.Queue()
+        MyGlobals.queue1 = queue.Queue()
         plt.close()
         thr2 = threading.Thread(target=performAnalysis, args=(MyGlobals.deroulant.get(),chemin_carte,queue), kwargs={})
         thr2.start()
     return
 
+
+#Fonction qui permet de faire l'analyse de la répartition de la maladie choidie sur les deux sexes
 def process_queue_sexe():
     try:
-        queue_variables=Variables.queue1.get(0)
+        queue_variables=MyGlobals.queue1.get(0)
         sizes = queue_variables[0]
         labels=queue_variables[1]
         colors=queue_variables[2]
@@ -77,12 +66,12 @@ def process_queue_sexe():
         plt.savefig(os.path.abspath('Diagrammes\Sexes\\'+name_atc+'.png'))
         plt.show()
     except queue.Empty:
-        print("queue empty")
         window.after(500, process_queue_sexe)
+
 
 def process_queue_annee():
     try:
-        queue_variables=Variables.queue1.get(0)
+        queue_variables=MyGlobals.queue1.get(0)
         list_tupple_date = queue_variables[0]
         list_year=queue_variables[1]
         name_atc=queue_variables[2]
@@ -93,12 +82,10 @@ def process_queue_annee():
         X = plt.gca().xaxis
         X.set_major_locator(locator)
         X.set_major_formatter(fmt)
-
         for i in list_year:
             # On convertit les dates d'une année choisit pour qu'elles correspondent au format d'affichage
             list_dateformat = get_dayMonth_list_dateTimeFormat(list_tupple_date,i)
             annee_add_plot(list_dateformat,i)
-
         plt.legend( bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.)
         plt.title(name_atc)
         leg = interactive_legend()
@@ -107,14 +94,14 @@ def process_queue_annee():
                 os.makedirs(os.path.abspath("Diagrammes\Année"))
             plt.savefig(os.path.abspath('Diagrammes\Année\\'+name_atc+'.png'))
         plt.show()
-
     except queue.Empty:
         print("queue empty")
         window.after(500, process_queue_annee)
 
+
 def process_queue_croisement():
     try:
-        queue_variables=Variables.queue1.get(0)
+        queue_variables=MyGlobals.queue1.get(0)
         name_atc1=queue_variables[0]
         name_atc2 = queue_variables[1]
         year=queue_variables[2]
@@ -122,7 +109,6 @@ def process_queue_croisement():
         list_atc2=queue_variables[4]
         list_client_atc1=queue_variables[5]
         list_client_atc2=queue_variables[6]
-
         width_bar = 4
         fix_day1=1
         fix_day2=5
@@ -131,9 +117,7 @@ def process_queue_croisement():
         plt.figure(year+": "+name_atc1 +" VS "+name_atc2)
         twoatc_add_plot(name_atc1,list_atc1,width_bar,fix_day1)
         twoatc_add_plot(name_atc2,list_atc2,width_bar,fix_day2)
-
         show_bar_atc1_and_atc2(list_client_atc1,list_client_atc2,fix_day3,width_bar,"Achat des deux par une même personne le même mois")
-
         locator = mdates.MonthLocator()
         fmt = mdates.DateFormatter('%b')
         X = plt.gca().xaxis
@@ -151,6 +135,7 @@ def process_queue_croisement():
         window.after(500, process_queue_sexe)
 
 
+#Fonction qui est appelé par sauvegarde() et qui permet de lancer les calculs qui sont selectionnés par l'utilisateur
 def performAnalysis(a2,chemin_carte,queue):
     nb_operations=valeur_case_graph_annee.get()+valeur_case_graph_sexe.get()+valeur_case_calcul_carte.get()+MyGlobals.deroulant2.winfo_ismapped()
     if valeur_case_calcul_carte.get():
@@ -162,7 +147,6 @@ def performAnalysis(a2,chemin_carte,queue):
         graph_sexe(a2,MyGlobals.chemin)
         window.after(0,process_queue_sexe)
         progressbar["value"]+=100/nb_operations
-        
     if valeur_case_graph_annee.get() :
         progressbar_title["text"]='Creation du graph \"Année\" en cours'
         show_graph_atc3(a2,MyGlobals.chemin)
@@ -176,6 +160,8 @@ def performAnalysis(a2,chemin_carte,queue):
     progressbar["value"]=0
     progressbar_title["text"]=''
 
+
+#Fonction qui permet de regler les problèmes de lecture de certains caractères lors de la récupération du texte dans les menus déroulants
 def formatToFileName(string):
     string=string.replace("/","")
     string=string.replace("\\","")
@@ -188,10 +174,8 @@ def formatToFileName(string):
     string=string.replace("|","")
     return string
 
-def cases():
-    print("coché")
-    #case_a_cocher.flash()
 
+#Fonction permettant d'ouvrir le fichier csv necessaire en entrée du programme et de remplir les menus déroulant
 def ouverture_fichier_de_base():
     window.fileName = filedialog.askopenfilename(filetype =(("CSV files","*.csv"),("PDF file","*.pdf"),("HTML files","*.html")))
     MyGlobals.chemin = window.fileName
@@ -216,14 +200,12 @@ def open_diagram_folder():
     subprocess.Popen('explorer '+os.path.abspath("Diagrammes"))
 
 
-def getAllATCCodes(fileName):
-    #progressbar.pack(side=TOP)
-    progressbar_title['text']='Chargement du fichier en cours'
-    #progressbar_title.pack(expand=YES)
-    progressbar['mode']='indeterminate'
-    #progressbar.pack_forget()
-    progressbar.start()
 
+#Permet de lire tous les codes ATC présents dans le csv et de remplir les menus déroulants avec
+def getAllATCCodes(fileName):
+    progressbar_title['text']='Chargement du fichier en cours'
+    progressbar['mode']='indeterminate'
+    progressbar.start()
     with open(fileName, newline = '') as csvfile :
         readerMan = csv.DictReader(csvfile, delimiter=';',quotechar='|')
         header=readerMan.fieldnames
@@ -243,15 +225,8 @@ def getAllATCCodes(fileName):
             annee = get_day_month_year(row["Date_order"])[2]
             if test_de_presence(MyGlobals.mesDates,annee) == 1 or len(MyGlobals.mesDates)==0 :
                 MyGlobals.mesDates.append(annee)
-    print(MyGlobals.myCSV[0])
-    print(MyGlobals.myCSV[1])
-    print(window.fileName)
     MyGlobals.mesDates.sort()
     MyGlobals.myCSV.sort()
-    for i in MyGlobals.myCSV :
-        print(i)
-    print("la taille = ",len(MyGlobals.myCSV))
-    a = 'PREPARATIONS THYROIDIENNES'
     MyGlobals.deroulant['values']=MyGlobals.myCSV
     MyGlobals.deroulant['state'] = 'readonly'
     MyGlobals.deroulant2['values']=MyGlobals.myCSV
@@ -259,14 +234,12 @@ def getAllATCCodes(fileName):
     MyGlobals.deroulant_dates['values'] = MyGlobals.mesDates
     MyGlobals.deroulant_dates['state'] = 'readonly'
     bouton_analyse['state'] = 'normal'
-    if(a == MyGlobals.myCSV[1]) :
-        print('ok')
     progressbar_title['text']=''
-    #progressbar_title.pack_forget()
     progressbar.stop()
     progressbar['mode']='determinate'
-    #progressbar.pack_forget()
 
+
+#Fonction permettant de vérifier si un élément (ici MonSujet) est déjà présent dans une liste
 def test_de_presence(maListe,monSujet):
     x = 1
     if len(maListe) != 0 :
@@ -275,9 +248,8 @@ def test_de_presence(maListe,monSujet):
                 x = 0
     return x
 
-def showCity():
-    print(MyGlobals.choix_ville.get())
 
+#Fonction qui permet à l'utilisateur de choisir sur quelle ville centrer la carte (Création de la fenêtre)
 def menuParametre():
     para = Toplevel()
     para.title("Paramètres")
@@ -297,14 +269,17 @@ def menuParametre():
     B1.pack()
     para.mainloop()
 
+
+#Fonction qui permet à l'utilisateur de choisir sur quelle ville centrer la carte (Modification de la variable)
 def choix_lieu():
     MyGlobals.lieu_actuel = [MyGlobals.liste_villes[MyGlobals.choix_ville.get()][0],[MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][0],MyGlobals.liste_villes[MyGlobals.choix_ville.get()][2][1]]]
-    print("Vous avez choisi ",MyGlobals.lieu_actuel[0]," avec comme coordonnées ",MyGlobals.lieu_actuel[1])
 
 
+#Fonction permettant l'ouverture de la carte
 def ouvrir_carte():
     subprocess.Popen('explorer '+os.path.abspath("Cartes"))
     
+
 
 def get_EAN13(name_atc,path_file):
     with open(path_file,newline='') as csvfile:
@@ -315,6 +290,7 @@ def get_EAN13(name_atc,path_file):
                 l = [row["lat"],row["lon"]]
                 list.append(l)
         return list
+
 
 def graph_sexe(name_atc,path_data_file):
     nb_individuals=[0,0,0] # indexes: 0=man, 1=woman, 2=other
@@ -330,31 +306,53 @@ def graph_sexe(name_atc,path_data_file):
         labels = 'Homme','Femme'
         sizes = [men_proportion,women_proportion]
         colors = ['blue','red']
-        Variables.queue1.put((sizes,labels,colors,name_atc))
-    return  
+        MyGlobals.queue1.put((sizes,labels,colors,name_atc))
+    return
 
+
+#Fonction permettant de sauvegarder le diagramme des années.
 def sauve_annee(fig,name_atc):
-    if 1==1 :
-        if not os.path.exists(os.path.abspath("Diagrammes\Année")):
-            os.makedirs(os.path.abspath("Diagrammes\Année"))
-        plt.savefig(os.path.abspath('Diagrammes\Année\\'+name_atc+'.png'))
+    if not os.path.exists(os.path.abspath("Diagrammes\Année")):
+        os.makedirs(os.path.abspath("Diagrammes\Année"))
+    plt.savefig(os.path.abspath('Diagrammes\Année\\'+name_atc+'.png'))
 
+
+# Grace à Folium on crée une heatmap représentant la densité d'achat pour un atc
 def carto(name_atc,path_data_file,path_html_file):
     list = []
     list = get_EAN13(name_atc,path_data_file)
     m = folium.Map(MyGlobals.lieu_actuel[1], zoom_start=14)
-    m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'yellow', 0.7: 'orange', 1: 'red'}))
+    m.add_child(plugins.HeatMap(list, radius=30,gradient={0: 'blue', 0.6: 'green', 1: 'red'}))
     if not ".html" in path_html_file:
         path_html_file+=".html"
-
     m.save(path_html_file)
     if valeur_case_affichage_carte.get()==1:
         print(os.path.abspath(path_html_file))
         webbrowser.open_new_tab(os.path.abspath(path_html_file))
-    print("c'est fini")
 
 
+#Fonction qui autorise l'utilisateur à cocher la case d'affichage de la carte après analyse ou non
+def coche_calcul_carte():
+    if valeur_case_calcul_carte.get()==False:
+        case_affichage_carte['state']='disabled'
+        valeur_case_affichage_carte.set(False)
+    else:
+        case_affichage_carte['state']='normal'
 
+
+#Fonction permettant d'ajouter les menus déroulants supplémentaires pour l'analyse de croisement de maladie ou de les enlever
+def ajout_retrait_ligne():   
+    if MyGlobals.deroulant2.winfo_ismapped() and MyGlobals.deroulant_dates.winfo_ismapped():
+        MyGlobals.deroulant2.grid_forget()
+        MyGlobals.deroulant_dates.grid_forget()
+        bouton_ajout_ligne['text']='+'
+    else:
+        MyGlobals.deroulant2.grid(row=1,column=0,pady =10)
+        MyGlobals.deroulant_dates.grid(row=2,column=0,pady=5)
+        bouton_ajout_ligne['text']='-'
+
+
+#Fonction qui met en place toute la fenêtre du programme
 # On créé notre fenêtre
 window = Tk()
 window.title("Medical Data Analyser")
@@ -362,16 +360,10 @@ window.geometry("850x500")
 window.iconbitmap("logo-pharmacie-médical.ico")
 window.minsize(480, 360)
 window.resizable(False, False)
-#window.config(background='#DD1616')
-
 canvas = Canvas(window,width = 1920, height = 1920, bg = 'blue')
 canvas.pack(expand = YES, fill = BOTH)
-
 image = ImageTk.PhotoImage(file = os.path.abspath("background.jpg"))
 canvas.create_image(0, 0, image = image, anchor = NW)
-
-
-
 
 #On créé des onglets menus etc
 menus = Menu(window)
@@ -392,37 +384,7 @@ menuEdition.add_command(label = "Cartes",command = ouvrir_carte)
 fr = Frame(canvas, bd='2', relief=SOLID)
 fr.place(x=10,y=10)
 fr2 = Frame(fr, bd='2', relief=SOLID)
-# on met qqs éléments
-#lab_titre = Label(fr, text="Un Deux Un Deux", font=("Arial", 50), bg='#DD1616', fg='white')
-#lab_titre.pack(expand=YES)
-#
-#lab_titre2 = Label(fr, text="Bienvenue à tous", font=("Arial", 30), bg='#DD1616', fg='white')
-#lab_titre2.pack(expand=YES)
-
-
 fr.grid(row=0,column=0,sticky=W,padx=20, pady=20)
-
-
-#fr.grid(row=0, column=0)
-
-
-def coche_calcul_carte():
-    if valeur_case_calcul_carte.get()==False:
-        case_affichage_carte['state']='disabled'
-        valeur_case_affichage_carte.set(False)
-    else:
-        case_affichage_carte['state']='normal'
-
-
-def ajout_retrait_ligne():   
-    if MyGlobals.deroulant2.winfo_ismapped() and MyGlobals.deroulant_dates.winfo_ismapped():
-        MyGlobals.deroulant2.grid_forget()
-        MyGlobals.deroulant_dates.grid_forget()
-        bouton_ajout_ligne['text']='+'
-    else:
-        MyGlobals.deroulant2.grid(row=1,column=0,pady =10)
-        MyGlobals.deroulant_dates.grid(row=2,column=0,pady=5)
-        bouton_ajout_ligne['text']='-'
 
 MyGlobals.deroulant = ttk.Combobox(fr, values = MyGlobals.myCSV , font = ("Arial",10), width = 110)
 MyGlobals.deroulant['state']='disabled'
@@ -446,9 +408,8 @@ bouton_analyse.grid(row=4,column=0,pady =10)
 progressbar=ttk.Progressbar(fr,orient="horizontal",length=300,mode="determinate")
 progressbar.grid(row=5,column=0,pady =10)
 
-progressbar_title=Label(fr, text="") 
+progressbar_title=Label(fr, text="")
 progressbar_title.grid(row=6,column=0,pady = 10)
-
 
 valeur_case_affichage_carte = BooleanVar()
 valeur_case_graph_sexe = BooleanVar()
@@ -465,9 +426,6 @@ case_graph_sexe = Checkbutton(fr2,text="Répartition selon le sexe",font=("Arial
 case_graph_sexe.grid(row=1,column=0,pady =10,sticky=W)
 case_graph_annee = Checkbutton(fr2,text="Répartion sur l'année",font=("Arial", 15), fg='#000000', variable=valeur_case_graph_annee)
 case_graph_annee.grid(row=1,column=1,padx=80,pady=10,sticky=W)
-
-
-
 
 # Puis on l'affiche
 window.config(menu = menus)
